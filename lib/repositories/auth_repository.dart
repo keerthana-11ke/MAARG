@@ -1,40 +1,10 @@
 import 'dart:async';
-import 'package:firebase_auth/firebase_auth.dart';
 
 abstract class AuthRepository {
   Future<String?> signInAnonymously();
   Future<void> signOut();
   String? get currentUserId;
   Stream<String?> get authStateChanges;
-}
-
-class FirebaseAuthRepository implements AuthRepository {
-  final FirebaseAuth _auth;
-
-  FirebaseAuthRepository(this._auth);
-
-  @override
-  Future<String?> signInAnonymously() async {
-    try {
-      final credential = await _auth.signInAnonymously();
-      return credential.user?.uid;
-    } catch (e) {
-      print('Firebase Auth Error: $e. Falling back to mock authentication.');
-      return 'mock_firebase_user_id';
-    }
-  }
-
-  @override
-  Future<void> signOut() async {
-    await _auth.signOut();
-  }
-
-  @override
-  String? get currentUserId => _auth.currentUser?.uid;
-
-  @override
-  Stream<String?> get authStateChanges =>
-      _auth.authStateChanges().map((user) => user?.uid);
 }
 
 class MockAuthRepository implements AuthRepository {

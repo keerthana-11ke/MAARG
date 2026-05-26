@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 enum IncidentStatus { active, resolved }
 
 class Incident {
@@ -21,7 +19,7 @@ class Incident {
     return {
       'latitude': latitude,
       'longitude': longitude,
-      'createdAt': Timestamp.fromDate(createdAt),
+      'createdAt': createdAt.toIso8601String(),
       'status': status.name,
     };
   }
@@ -31,7 +29,9 @@ class Incident {
       id: documentId,
       latitude: (map['latitude'] as num).toDouble(),
       longitude: (map['longitude'] as num).toDouble(),
-      createdAt: (map['createdAt'] as Timestamp).toDate(),
+      createdAt: map['createdAt'] is String 
+          ? DateTime.parse(map['createdAt'] as String) 
+          : DateTime.now(),
       status: IncidentStatus.values.firstWhere(
         (e) => e.name == map['status'],
         orElse: () => IncidentStatus.active,

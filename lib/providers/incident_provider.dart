@@ -1,21 +1,13 @@
 import 'dart:async';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/incident.dart';
 import '../models/bystander_role.dart';
 import '../models/hospital_log.dart';
 import '../repositories/incident_repository.dart';
 import 'auth_provider.dart';
+import 'fcm_provider.dart';
 
 final incidentRepositoryProvider = Provider<IncidentRepository>((ref) {
-  try {
-    if (Firebase.apps.isNotEmpty) {
-      return FirebaseIncidentRepository(FirebaseFirestore.instance);
-    }
-  } catch (e) {
-    print('Firebase not initialized. Defaulting to MockIncidentRepository: $e');
-  }
   return MockIncidentRepository();
 });
 
@@ -24,6 +16,7 @@ class IncidentState {
   final bool isActivating;
   final List<BystanderRole> roles;
   final List<HospitalLog> hospitalLogs;
+  final List<Incident> reportedIncidents;
   
   // Debrief flow state
   final String? lastActiveIncidentId;
@@ -35,6 +28,7 @@ class IncidentState {
     this.isActivating = false,
     this.roles = const [],
     this.hospitalLogs = const [],
+    this.reportedIncidents = const [],
     this.lastActiveIncidentId,
     this.debriefStep = 0,
     this.chosenFeelings = const [],
@@ -45,6 +39,7 @@ class IncidentState {
     bool? isActivating,
     List<BystanderRole>? roles,
     List<HospitalLog>? hospitalLogs,
+    List<Incident>? reportedIncidents,
     String? lastActiveIncidentId,
     int? debriefStep,
     List<String>? chosenFeelings,
@@ -54,6 +49,7 @@ class IncidentState {
       isActivating: isActivating ?? this.isActivating,
       roles: roles ?? this.roles,
       hospitalLogs: hospitalLogs ?? this.hospitalLogs,
+      reportedIncidents: reportedIncidents ?? this.reportedIncidents,
       lastActiveIncidentId: lastActiveIncidentId ?? this.lastActiveIncidentId,
       debriefStep: debriefStep ?? this.debriefStep,
       chosenFeelings: chosenFeelings ?? this.chosenFeelings,
@@ -88,17 +84,26 @@ class IncidentNotifier extends Notifier<IncidentState> {
 
       // 2. Create the incident
       final incident = await _repository.createIncident(latitude, longitude);
+      final list = List<Incident>.from(state.reportedIncidents)..add(incident);
       
       // 3. Set the active incident and start listening
       state = state.copyWith(
         activeIncident: () => incident,
         isActivating: false,
         lastActiveIncidentId: incident.id,
+        reportedIncidents: list,
         debriefStep: 0,
         chosenFeelings: const [],
       );
 
       _startListening(incident.id);
+
+      // 4. Silently trigger local bystander notification simulation
+      try {
+        ref.read(fcmProvider.notifier).simulateBystanderRelayAfterDelay(incident.id);
+      } catch (fcmError) {
+        print('Bystander simulation warning: $fcmError');
+      }
     } catch (e) {
       state = state.copyWith(isActivating: false);
       print('SOS Activation failed: $e');
@@ -201,7 +206,9 @@ class IncidentNotifier extends Notifier<IncidentState> {
 
   void clearAll() {
     _cancelSubscriptions();
-    state = IncidentState();
+    state = IncidentState(
+      reportedIncidents: state.reportedIncidents,
+    );
   }
 }
 

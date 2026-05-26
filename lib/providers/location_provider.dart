@@ -35,8 +35,8 @@ class LocationNotifier extends Notifier<LocationState> {
     // Trigger location acquisition asynchronously
     Future.microtask(() => updateLocation());
     return LocationState(
-      latitude: 28.6139,
-      longitude: 77.2090,
+      latitude: 13.0827,
+      longitude: 80.2707,
       isMock: true,
       statusMessage: 'Initializing...',
     );

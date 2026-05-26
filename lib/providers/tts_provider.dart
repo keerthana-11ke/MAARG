@@ -23,6 +23,19 @@ class TtsNotifier {
     }
   }
 
+  Future<void> setLanguage(String langCode) async {
+    try {
+      await _flutterTts.setLanguage(langCode);
+      if (langCode == 'en-US') {
+        await _flutterTts.setSpeechRate(0.45);
+      } else {
+        await _flutterTts.setSpeechRate(0.40); // Slightly slower for local languages to be clear
+      }
+    } catch (e) {
+      // Ignore errors
+    }
+  }
+
   Future<void> speak(String text) async {
     if (text.isEmpty) return;
     try {

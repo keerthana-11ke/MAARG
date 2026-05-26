@@ -35,8 +35,8 @@ class _DebriefScreenState extends ConsumerState<DebriefScreen> {
     ref.read(timerProvider.notifier).resetTimer();
     // 2. Stop TTS if active
     ref.read(ttsProvider).stop();
-    // 3. Go back to Home
-    context.go('/');
+    // 3. Go to Heatmap
+    context.push('/heatmap');
   }
 
   @override

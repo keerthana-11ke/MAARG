@@ -6,6 +6,8 @@ import '../screens/guidance_screen.dart';
 import '../screens/role_assignment_screen.dart';
 import '../screens/good_samaritan_screen.dart';
 import '../screens/debrief_screen.dart';
+import '../screens/responder_screen.dart';
+import '../screens/heatmap_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/',
@@ -37,6 +39,17 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/debrief',
       builder: (context, state) => const DebriefScreen(),
+    ),
+    GoRoute(
+      path: '/responder/:incidentId',
+      builder: (context, state) {
+        final incidentId = state.pathParameters['incidentId'] ?? '';
+        return ResponderScreen(incidentId: incidentId);
+      },
+    ),
+    GoRoute(
+      path: '/heatmap',
+      builder: (context, state) => const HeatmapScreen(),
     ),
   ],
 );
