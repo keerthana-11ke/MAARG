@@ -1,0 +1,9 @@
+name: flutter_sms
+description: Custom local mock of flutter_sms supporting sendDirect on modern Flutter.
+version: 2.3.3
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+  flutter: '>=3.0.0'
+dependencies:
+  flutter:
+    sdk: flutter

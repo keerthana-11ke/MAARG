@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:geolocator/geolocator.dart';
 
 enum ServiceType { hospital, police, fire }
 
@@ -98,27 +99,22 @@ class StaticServicesRepository implements ServicesRepository {
     
     final List<EmergencyService> results = [];
     for (final service in _allServices) {
-      final distance = _calculateHaversineDistance(userLat, userLng, service.latitude, service.longitude);
-      results.add(service.copyWithDistance(distance));
+      double distanceInMeters = Geolocator.distanceBetween(
+        userLat, userLng,
+        service.latitude, service.longitude,
+      );
+      double distanceInKm = distanceInMeters / 1000;
+
+      // Show only hospitals within 20km.
+      if (service.type == ServiceType.hospital && distanceInKm > 20) {
+        continue;
+      }
+      
+      results.add(service.copyWithDistance(distanceInKm));
     }
 
     // Sort by distance ascending
     results.sort((a, b) => (a.calculatedDistance ?? double.infinity).compareTo(b.calculatedDistance ?? double.infinity));
     return results;
-  }
-
-  // Haversine formula to compute distance in km
-  double _calculateHaversineDistance(double lat1, double lon1, double lat2, double lon2) {
-    const r = 6371; // Earth's radius in km
-    final dLat = _toRadians(lat2 - lat1);
-    final dLon = _toRadians(lon2 - lon1);
-    final a = sin(dLat / 2) * sin(dLat / 2) +
-        cos(_toRadians(lat1)) * cos(_toRadians(lat2)) * sin(dLon / 2) * sin(dLon / 2);
-    final c = 2 * atan2(sqrt(a), sqrt(1 - a));
-    return r * c;
-  }
-
-  double _toRadians(double degree) {
-    return degree * pi / 180;
   }
 }

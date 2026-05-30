@@ -57,6 +57,7 @@ class _ResponderScreenState extends ConsumerState<ResponderScreen> {
   }
 
   Future<void> _handleClaimRole(String roleId, BystanderRoleType roleType) async {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
     try {
       final authRepo = ref.read(authRepositoryProvider);
       String? userId = authRepo.currentUserId;
@@ -68,7 +69,7 @@ class _ResponderScreenState extends ConsumerState<ResponderScreen> {
       if (userId != null) {
         await ref.read(incidentRepositoryProvider).claimRole(widget.incidentId, roleId, userId);
         ref.read(ttsProvider).speak("Thank you. You have claimed this role.");
-        ScaffoldMessenger.of(context).showSnackBar(
+        scaffoldMessenger.showSnackBar(
           const SnackBar(
             content: Text('Role claimed successfully! Proceed to coordinates.'),
             backgroundColor: Colors.green,
@@ -76,7 +77,7 @@ class _ResponderScreenState extends ConsumerState<ResponderScreen> {
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      scaffoldMessenger.showSnackBar(
         SnackBar(
           content: Text('Failed to claim role: $e'),
           backgroundColor: Colors.red,
@@ -102,7 +103,7 @@ class _ResponderScreenState extends ConsumerState<ResponderScreen> {
           onPressed: () => context.go('/'),
         ),
         title: const Text(
-          'RESPONDER DASHBOARD',
+          'Responder Board',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w900,
@@ -183,18 +184,21 @@ class _ResponderScreenState extends ConsumerState<ResponderScreen> {
                             style: TextStyle(
                               color: Colors.amber,
                               fontWeight: FontWeight.bold,
-                              fontSize: 13,
+                              fontSize: 14,
                             ),
                           ),
                         ),
                         const SizedBox(height: 24),
-                        const Text(
-                          'NEIGHBORHOOD COORDINATION BOARD',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 1.2,
-                            color: Colors.grey,
+                        const FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            'NEIGHBORHOOD COORDINATION BOARD',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.2,
+                              color: Colors.grey,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -321,7 +325,7 @@ class _ResponderScreenState extends ConsumerState<ResponderScreen> {
                   ),
                   child: const Text(
                     'CLAIMED',
-                    style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold),
+                    style: TextStyle(color: Colors.grey, fontSize: 14, fontWeight: FontWeight.bold),
                   ),
                 )
               else
@@ -330,8 +334,8 @@ class _ResponderScreenState extends ConsumerState<ResponderScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: color.withOpacity(0.15),
                     foregroundColor: color,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    minimumSize: Size.zero,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    minimumSize: const Size(80, 56),
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -340,7 +344,7 @@ class _ResponderScreenState extends ConsumerState<ResponderScreen> {
                   ),
                   child: const Text(
                     'CLAIM',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                 ),
             ],

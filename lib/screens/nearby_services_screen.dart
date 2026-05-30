@@ -72,7 +72,7 @@ class NearbyServicesScreen extends ConsumerWidget {
                     const Text(
                       'LIVE DISPATCH TRACKER',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 14,
                         fontWeight: FontWeight.w900,
                         letterSpacing: 1.5,
                         color: Colors.amber,
@@ -119,7 +119,7 @@ class NearbyServicesScreen extends ConsumerWidget {
                                 child: Text(
                                   log.status.name.toUpperCase(),
                                   style: TextStyle(
-                                    fontSize: 10,
+                                    fontSize: 14,
                                     fontWeight: FontWeight.bold,
                                     color: statusColor,
                                   ),
@@ -141,7 +141,7 @@ class NearbyServicesScreen extends ConsumerWidget {
                   const Text(
                     'NEARBY EMERGENCY DEPOTS',
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 14,
                       fontWeight: FontWeight.w900,
                       letterSpacing: 1.5,
                       color: Colors.grey,
@@ -200,36 +200,11 @@ class NearbyServicesScreen extends ConsumerWidget {
                               ),
                               subtitle: Text(
                                 '${service.calculatedDistance?.toStringAsFixed(2) ?? 'N/A'} km away • ${service.phone}',
-                                style: TextStyle(color: Colors.grey.shade400, fontSize: 13),
+                                style: TextStyle(color: Colors.grey.shade400, fontSize: 14),
                               ),
-                              trailing: Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  onTap: () => _makeCall(service.phone),
-                                  borderRadius: BorderRadius.circular(20),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                    decoration: BoxDecoration(
-                                      color: primaryRed.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(Icons.call, color: primaryRed, size: 16),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          'CALL',
-                                          style: TextStyle(
-                                            color: primaryRed,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
+                              trailing: IconButton(
+                                icon: Icon(Icons.call, color: primaryRed),
+                                onPressed: () => _makeCall(service.phone),
                               ),
                             ),
                           );

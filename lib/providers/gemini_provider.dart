@@ -18,8 +18,7 @@ class GeminiService {
 
   Future<String> analyzeInjury(String description) async {
     if (_apiKey.isEmpty) {
-      return "Gemini API key is not configured. Please build the application with "
-          "--dart-define=GEMINI_API_KEY=YOUR_KEY parameter.";
+      return "AI Assessment unavailable offline";
     }
 
     final prompt = "You are an emergency first aid assistant.\n"

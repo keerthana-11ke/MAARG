@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import '../providers/tts_provider.dart';
 import '../providers/timer_provider.dart';
+import '../providers/incident_provider.dart';
 
 class RoleAssignmentScreen extends ConsumerStatefulWidget {
   const RoleAssignmentScreen({super.key});
@@ -18,6 +20,7 @@ class _RoleAssignmentScreenState extends ConsumerState<RoleAssignmentScreen> {
     setState(() {
       _claimedRoleId = roleId;
     });
+    ref.read(incidentStateProvider.notifier).setChosenRole(roleId);
     ref.read(ttsProvider).speak("Thank you. You are helping save a life.");
   }
 
@@ -49,15 +52,22 @@ class _RoleAssignmentScreenState extends ConsumerState<RoleAssignmentScreen> {
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'COORDINATION BOARD',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 1.5,
-                color: Colors.white,
+            const Expanded(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'COORDINATION BOARD',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.5,
+                    color: Colors.white,
+                  ),
+                ),
               ),
             ),
+            const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
@@ -173,7 +183,7 @@ class _RoleAssignmentScreenState extends ConsumerState<RoleAssignmentScreen> {
                       height: 64, // Minimum height 64px
                       child: ElevatedButton(
                         onPressed: () {
-                          context.push('/debrief');
+                          _showEvidenceCapturePopup(context);
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green.shade700,
@@ -202,6 +212,113 @@ class _RoleAssignmentScreenState extends ConsumerState<RoleAssignmentScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _showEvidenceCapturePopup(BuildContext context) async {
+    final goRouter = GoRouter.of(context);
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+    final result = await showDialog<bool>(
+      context: context,
+      barrierColor: Colors.black87,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1E1E1E),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          content: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Positioned(
+                right: -12,
+                top: -12,
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Colors.grey),
+                  onPressed: () => Navigator.pop(dialogContext, false), // Skip
+                ),
+              ),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 12),
+                  const Text(
+                    '📸 Capture Evidence?',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Take a photo for the incident report. This helps police and insurance.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey, fontSize: 14),
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(dialogContext, false), // Skip
+                        child: const Text('SKIP', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFE53935),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        onPressed: () => Navigator.pop(dialogContext, true), // Take Photo
+                        child: const Text('TAKE PHOTO', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (result == true) {
+      try {
+        final ImagePicker picker = ImagePicker();
+        final XFile? photo = await picker.pickImage(
+          source: ImageSource.camera,
+          imageQuality: 85,
+        );
+
+        if (photo != null) {
+          ref.read(incidentStateProvider.notifier).setEvidencePhotoPath(photo.path);
+          scaffoldMessenger.showSnackBar(
+            const SnackBar(
+              content: Text('Evidence captured ✅'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+          goRouter.push('/debrief');
+        } else {
+          ref.read(incidentStateProvider.notifier).setEvidencePhotoPath(null);
+          goRouter.push('/debrief');
+        }
+      } catch (e) {
+        print("Camera capture error: $e");
+        scaffoldMessenger.showSnackBar(
+          SnackBar(content: Text('Error accessing camera: $e')),
+        );
+        goRouter.push('/debrief');
+      }
+    } else {
+      ref.read(incidentStateProvider.notifier).setEvidencePhotoPath(null);
+      if (context.mounted) {
+        context.push('/debrief');
+      }
+    }
   }
 
   Widget _buildRoleCard({
@@ -263,7 +380,7 @@ class _RoleAssignmentScreenState extends ConsumerState<RoleAssignmentScreen> {
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
-              height: 52,
+              height: 56,
               child: ElevatedButton(
                 onPressed: () {
                   if (!isClaimed) {

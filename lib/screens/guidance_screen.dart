@@ -58,16 +58,34 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> with SingleTick
     }
   }
 
+  Future<void> _speakText(String text) async {
+    final tts = ref.read(ttsProvider);
+    await tts.setLanguage(_getLangCode(_selectedLang));
+    await tts.speak(text);
+  }
+
   Future<void> _speakInstructions(List<String> instructions) async {
     final tts = ref.read(ttsProvider);
     await tts.setLanguage(_getLangCode(_selectedLang));
     final text = instructions.join(". ");
-    tts.speak(text);
+    await tts.speak(text);
+  }
+
+  void _speakCurrentStep() {
+    if (_currentStep == 1) {
+      _speakText(_getLocalizedQuestion('conscious'));
+    } else if (_currentStep == 2) {
+      _speakText(_getLocalizedQuestion('breathing'));
+    } else if (_currentStep == 3) {
+      _speakText(_getLocalizedQuestion('bleeding'));
+    } else if (_currentStep == 4) {
+      final data = _getLocalizedData();
+      _speakInstructions(List<String>.from(data['items']));
+    }
   }
 
   void _triggerAutoRead() {
-    final data = _getLocalizedData();
-    _speakInstructions(List<String>.from(data['items']));
+    _speakCurrentStep();
   }
 
   Future<void> _scanInjury() async {
@@ -102,7 +120,7 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> with SingleTick
               children: [
                 const Text(
                   'e.g. bleeding, swelling, burn',
-                  style: TextStyle(color: Colors.white54, fontSize: 13),
+                  style: TextStyle(color: Colors.white54, fontSize: 14),
                 ),
                 const SizedBox(height: 12),
                 TextField(
@@ -190,13 +208,18 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> with SingleTick
             _isConscious = true;
             _currentStep = 2;
           });
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _speakCurrentStep();
+          });
         },
         onNo: () {
           setState(() {
             _isConscious = false;
             _currentStep = 4; // Skip to unconscious instructions
           });
-          _triggerAutoRead();
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _speakCurrentStep();
+          });
         },
       );
     } else if (_currentStep == 2) {
@@ -207,13 +230,18 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> with SingleTick
             _isBreathing = true;
             _currentStep = 3;
           });
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _speakCurrentStep();
+          });
         },
         onNo: () {
           setState(() {
             _isBreathing = false;
             _currentStep = 4; // Skip to CPR instructions
           });
-          _triggerAutoRead();
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _speakCurrentStep();
+          });
         },
       );
     } else if (_currentStep == 3) {
@@ -224,14 +252,18 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> with SingleTick
             _isBleeding = true;
             _currentStep = 4;
           });
-          _triggerAutoRead();
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _speakCurrentStep();
+          });
         },
         onNo: () {
           setState(() {
             _isBleeding = false;
             _currentStep = 4;
           });
-          _triggerAutoRead();
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _speakCurrentStep();
+          });
         },
       );
     } else {
@@ -247,42 +279,49 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> with SingleTick
       );
     }
 
+    final isMuted = ref.watch(ttsMuteProvider);
+
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: const Color(0xFF0A0A0A),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              'FIRST AID TRIAGE',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 1.5,
-                color: Colors.white,
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: timerColor.withOpacity(0.1),
-                border: Border.all(color: timerColor),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                _formatDuration(secondsRemaining),
-                style: TextStyle(
-                  fontSize: 16,
-                  fontFamily: 'monospace',
-                  fontWeight: FontWeight.bold,
-                  color: timerColor,
-                ),
-              ),
-            ),
-          ],
+        title: const Text(
+          'First Aid',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1.5,
+            color: Colors.white,
+          ),
         ),
+        actions: [
+          IconButton(
+            icon: Icon(isMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded, color: Colors.grey),
+            onPressed: () {
+              ref.read(ttsProvider).toggleMute();
+            },
+          ),
+          Container(
+            alignment: Alignment.center,
+            margin: const EdgeInsets.only(right: 16, top: 8, bottom: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: timerColor.withOpacity(0.1),
+              border: Border.all(color: timerColor),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              _formatDuration(secondsRemaining),
+              style: TextStyle(
+                fontSize: 14,
+                fontFamily: 'monospace',
+                fontWeight: FontWeight.bold,
+                color: timerColor,
+              ),
+            ),
+          ),
+        ],
       ),
       body: SafeArea(
         child: Padding(
@@ -344,6 +383,7 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> with SingleTick
 
               // 3. Primary Bottom Navigation CTA: Assign Roles
               SizedBox(
+                width: double.infinity,
                 height: 64, // Minimum height 64px
                 child: ElevatedButton.icon(
                   onPressed: () {
@@ -376,25 +416,45 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> with SingleTick
   }
 
   Widget _buildLanguageSelector() {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white10),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildLangButton('EN', 'EN'),
-          Container(height: 16, width: 1, color: Colors.white24),
-          _buildLangButton('தமிழ்', 'TA'),
-          Container(height: 16, width: 1, color: Colors.white24),
-          _buildLangButton('हिंदी', 'HI'),
-        ],
-      ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white10),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildLangButton('EN', 'EN'),
+              Container(height: 16, width: 1, color: Colors.white24),
+              _buildLangButton('தமிழ்', 'TA'),
+              Container(height: 16, width: 1, color: Colors.white24),
+              _buildLangButton('हिंदी', 'HI'),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextButton.icon(
+          onPressed: () {
+            _speakCurrentStep();
+          },
+          icon: const Text('🔊', style: TextStyle(fontSize: 16)),
+          label: const Text(
+            'Tap to hear instructions',
+            style: TextStyle(
+              color: Color(0xFFE53935),
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+      ],
     );
   }
 
@@ -405,9 +465,7 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> with SingleTick
         setState(() {
           _selectedLang = langCode;
         });
-        if (_currentStep == 4) {
-          _triggerAutoRead();
-        }
+        _triggerAutoRead();
       },
       style: TextButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -722,44 +780,50 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> with SingleTick
                 ),
               )),
           const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              TextButton.icon(
-                onPressed: () {
-                  setState(() {
-                    _currentStep = 1;
-                    _isConscious = null;
-                    _isBreathing = null;
-                    _isBleeding = null;
-                    _selectedImage = null;
-                    _aiResponse = null;
-                  });
-                  try {
-                    ref.read(ttsProvider).stop();
-                  } catch (_) {}
-                },
-                icon: const Icon(Icons.restart_alt, color: Colors.grey),
-                label: const Text(
-                  'RE-ASSESS',
-                  style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-              ),
-              const SizedBox(width: 24),
-              ElevatedButton.icon(
-                onPressed: _scanInjury,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFE53935).withOpacity(0.2),
-                  foregroundColor: Colors.white,
-                  side: const BorderSide(color: Color(0xFFE53935)),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+              SizedBox(
+                height: 56,
+                child: ElevatedButton.icon(
+                  onPressed: _scanInjury,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFE53935).withOpacity(0.2),
+                    foregroundColor: Colors.white,
+                    side: const BorderSide(color: Color(0xFFE53935)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  icon: const Icon(Icons.camera_alt_rounded),
+                  label: const Text(
+                    'SCAN INJURY',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                 ),
-                icon: const Icon(Icons.camera_alt_rounded),
-                label: const Text(
-                  'SCAN INJURY',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 56,
+                child: TextButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _currentStep = 1;
+                      _isConscious = null;
+                      _isBreathing = null;
+                      _isBleeding = null;
+                      _selectedImage = null;
+                      _aiResponse = null;
+                    });
+                    try {
+                      ref.read(ttsProvider).stop();
+                    } catch (_) {}
+                  },
+                  icon: const Icon(Icons.restart_alt, color: Colors.grey),
+                  label: const Text(
+                    'RE-ASSESS',
+                    style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
                 ),
               ),
             ],
@@ -863,7 +927,7 @@ class _GuidanceScreenState extends ConsumerState<GuidanceScreen> with SingleTick
                       'AI assessment — not a substitute for medical advice',
                       style: TextStyle(
                         color: Colors.redAccent,
-                        fontSize: 12,
+                        fontSize: 14,
                         fontStyle: FontStyle.italic,
                         fontWeight: FontWeight.bold,
                       ),

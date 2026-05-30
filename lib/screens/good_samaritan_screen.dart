@@ -107,7 +107,7 @@ class GoodSamaritanScreen extends StatelessWidget {
                 // Dismiss Button
                 SizedBox(
                   width: double.infinity,
-                  height: 54,
+                  height: 56,
                   child: ElevatedButton(
                     onPressed: () => context.pop(),
                     style: ElevatedButton.styleFrom(
@@ -160,7 +160,7 @@ class GoodSamaritanScreen extends StatelessWidget {
                 description,
                 style: TextStyle(
                   color: Colors.grey.shade400,
-                  fontSize: 13,
+                  fontSize: 14,
                   height: 1.4,
                 ),
               ),
