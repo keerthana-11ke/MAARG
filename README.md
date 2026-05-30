@@ -16,7 +16,7 @@ MAARG (meaning *"path"* in Hindi) is an AI-powered road accident emergency respo
 
 ## 📱 Download APK
 
-[⬇️ Download MAARG Android APK](#)
+[[⬇️ Download MAARG Android APK](#)](https://drive.google.com/file/d/1Tnik5nIVXIYzb76W5cVtV51W0dtvUX7k/view?usp=drivesdk)
 
 ---
 
